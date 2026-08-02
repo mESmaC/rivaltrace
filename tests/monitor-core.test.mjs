@@ -7,12 +7,23 @@ import {
   normalizeHtml,
   sha256,
 } from "../lib/monitor.mjs";
+import { normalizeIdentityEmail, userIdentityId } from "../lib/identity.mjs";
 
 test("canonicalizes safe HTTPS targets and removes fragments", () => {
   assert.equal(
     canonicalizeTarget("  https://Example.com:443/pricing?plan=team#faq  "),
     "https://example.com/pricing?plan=team",
   );
+});
+
+test("derives a stable opaque identity without retaining the email", async () => {
+  assert.equal(normalizeIdentityEmail("  Owner@Example.com  "), "owner@example.com");
+  const first = await userIdentityId("Owner@Example.com");
+  const second = await userIdentityId(" owner@example.com ");
+  assert.equal(first, second);
+  assert.equal(first.length, 64);
+  assert.doesNotMatch(first, /owner|example/i);
+  assert.throws(() => normalizeIdentityEmail(""), /authenticated email/i);
 });
 
 test("rejects unsafe or non-public target forms", () => {

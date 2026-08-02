@@ -4,6 +4,7 @@ export const watchers = sqliteTable(
   "watchers",
   {
     id: text("id").primaryKey(),
+    userId: text("user_id").notNull().default("__legacy_owner__"),
     label: text("label").notNull(),
     url: text("url").notNull(),
     createdAt: text("created_at").notNull(),
@@ -16,8 +17,8 @@ export const watchers = sqliteTable(
     changeSummary: text("change_summary").notNull().default("Baseline saved."),
   },
   (table) => [
-    uniqueIndex("watchers_url_unique").on(table.url),
-    index("watchers_checked_idx").on(table.lastCheckedAt),
+    uniqueIndex("watchers_user_url_unique").on(table.userId, table.url),
+    index("watchers_user_checked_idx").on(table.userId, table.lastCheckedAt),
   ],
 );
 

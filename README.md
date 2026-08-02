@@ -6,8 +6,10 @@ on each recheck with source URL, check time, HTTP status, byte count, and a
 SHA-256 content hash.
 
 This repository is the private working V0. Manual baselines and rechecks work.
-Automated scheduling, notifications, account isolation, and billing are not yet
-connected and are not claimed by the interface.
+API access requires the hosting platform's authenticated-user header, and
+watchlists are isolated by a one-way identity digest. Automated scheduling,
+notifications, rate limiting, and billing are not yet connected and are not
+claimed by the interface.
 
 ## Current product contract
 
@@ -21,9 +23,11 @@ connected and are not claimed by the interface.
 - Keeps up to 24 added and 24 removed blocks in a single evidence response and
   reports omitted counts.
 
-The preview does not handle authenticated pages, JavaScript-only rendering,
-CAPTCHAs, semantic equivalence, or DNS-level rebinding defenses. Those are
-explicit launch gates, not hidden capabilities.
+The preview does not handle authenticated target pages, JavaScript-only
+rendering, CAPTCHAs, semantic equivalence, or DNS-level rebinding defenses.
+Those are explicit boundaries, not hidden capabilities. The deployment remains
+owner-only while identity isolation and the remaining paid-launch gates are
+tested.
 
 ## Local development
 
@@ -60,7 +64,7 @@ database ID or hosted credential in this repository.
 
 The intended initial tiers are Free (three weekly URLs), Solo at $9/month
 (fifteen daily URLs), and Studio at $19/month after Solo validation. They remain
-launch targets until scheduling, isolation, notifications, and billing pass the
-release gate.
+launch targets until scheduling, rate limits, notifications, identity-isolation
+testing, and billing pass the release gate.
 
 RivalTrace is a product from [YY](https://www.yycore.ai).
