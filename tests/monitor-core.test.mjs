@@ -26,6 +26,9 @@ test("rejects unsafe or non-public target forms", () => {
     "https://example.com:8443/page",
     "https://[::1]/page",
     "https://127.0.0.1.nip.io/page",
+    "https://localhost./page",
+    "https://metadata.google.internal./latest/meta-data",
+    "https://10.0.0.1.nip.io./page",
   ];
   for (const target of targets) {
     assert.throws(() => canonicalizeTarget(target), /HTTPS|Private|credentials|ports|IP-literal/i);
@@ -68,6 +71,17 @@ test("reports no change for byte-identical normalized text", () => {
   assert.equal(diff.kind, "none");
   assert.deepEqual(diff.added, []);
   assert.deepEqual(diff.removed, []);
+});
+
+test("reports an explicit evidence boundary when a long-page change falls past the diff window", () => {
+  const shared = Array.from({ length: 600 }, (_, index) => `Shared block ${index}`).join("\n");
+  const diff = diffSnapshots(`${shared}\nOld tail`, `${shared}\nNew tail`);
+  assert.equal(diff.changed, true);
+  assert.equal(diff.kind, "unclassified");
+  assert.equal(diff.evidenceLimited, true);
+  assert.deepEqual(diff.added, []);
+  assert.deepEqual(diff.removed, []);
+  assert.match(diff.summary, /outside the bounded evidence window/i);
 });
 
 test("follows only validated redirects and captures provenance", async () => {

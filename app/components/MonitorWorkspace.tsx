@@ -19,6 +19,7 @@ type Evidence = {
   removed: string[];
   omittedAdded: number;
   omittedRemoved: number;
+  evidenceLimited: boolean;
 };
 
 type ApiResult = {
@@ -220,11 +221,14 @@ export function MonitorWorkspace() {
                       {workingId === watcher.id ? "Checking…" : "Recheck"}
                     </button>
                   </div>
-                  {evidence && (evidence.added.length > 0 || evidence.removed.length > 0) ? (
+                  {evidence && (evidence.added.length > 0 || evidence.removed.length > 0 || evidence.evidenceLimited) ? (
                     <details className="watch-evidence" open>
                       <summary>Latest exact evidence</summary>
-                      {evidence.removed.map((item) => <div className="diff-block removed" key={`r-${item}`}><span>−</span><code>{item}</code></div>)}
-                      {evidence.added.map((item) => <div className="diff-block added" key={`a-${item}`}><span>+</span><code>{item}</code></div>)}
+                      {evidence.evidenceLimited ? (
+                        <p>The content hash changed beyond this preview&apos;s bounded diff window. No exact block is shown for that change.</p>
+                      ) : null}
+                      {evidence.removed.map((item, index) => <div className="diff-block removed" key={`r-${index}-${item}`}><span>−</span><code>{item}</code></div>)}
+                      {evidence.added.map((item, index) => <div className="diff-block added" key={`a-${index}-${item}`}><span>+</span><code>{item}</code></div>)}
                       {evidence.omittedAdded + evidence.omittedRemoved > 0 ? (
                         <p>{evidence.omittedAdded + evidence.omittedRemoved} additional changed blocks omitted from this bounded view.</p>
                       ) : null}
