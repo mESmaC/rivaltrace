@@ -29,6 +29,16 @@ type ApiResult = {
   error?: string;
 };
 
+class ApiRequestError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+  }
+}
+
 function hostFor(value: string) {
   try {
     return new URL(value).hostname;
@@ -54,8 +64,10 @@ function formatChecked(value: string) {
 
 async function apiJson(url: string, init?: RequestInit): Promise<ApiResult> {
   const response = await fetch(url, init);
-  const payload = (await response.json()) as ApiResult;
-  if (!response.ok) throw new Error(payload.error || `Request failed (${response.status})`);
+  const payload = await response.json().catch(() => ({})) as ApiResult;
+  if (!response.ok) {
+    throw new ApiRequestError(payload.error || `Request failed (${response.status})`, response.status);
+  }
   return payload;
 }
 
@@ -66,7 +78,17 @@ export function MonitorWorkspace() {
   const [loading, setLoading] = useState(true);
   const [workingId, setWorkingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [signedOut, setSignedOut] = useState(false);
   const [latestEvidence, setLatestEvidence] = useState<Record<string, Evidence>>({});
+
+  function handleApiError(reason: unknown, fallback: string) {
+    if (reason instanceof ApiRequestError && reason.status === 401) {
+      setSignedOut(true);
+      setError(null);
+      return;
+    }
+    setError(reason instanceof Error ? reason.message : fallback);
+  }
 
   useEffect(() => {
     let active = true;
@@ -75,7 +97,8 @@ export function MonitorWorkspace() {
         if (active) setWatchers(result.watchers ?? []);
       })
       .catch((reason: unknown) => {
-        if (active) setError(reason instanceof Error ? reason.message : "Could not load watchlist.");
+        if (!active) return;
+        handleApiError(reason, "Could not load watchlist.");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -107,7 +130,7 @@ export function MonitorWorkspace() {
       setLabel("");
       setUrl("");
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not create watcher.");
+      handleApiError(reason, "Could not create watcher.");
     } finally {
       setWorkingId(null);
     }
@@ -129,7 +152,7 @@ export function MonitorWorkspace() {
         setLatestEvidence((current) => ({ ...current, [watcher.id]: result.evidence as Evidence }));
       }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not recheck page.");
+      handleApiError(reason, "Could not recheck page.");
     } finally {
       setWorkingId(null);
     }
@@ -149,6 +172,20 @@ export function MonitorWorkspace() {
       </div>
 
       <div className="workspace-shell">
+        {signedOut ? (
+          <div className="signin-panel">
+            <p className="eyebrow">Private account</p>
+            <h3>Sign in to open your watchlist.</h3>
+            <p>
+              RivalTrace uses Sign in with ChatGPT for this preview. Each account sees only its own
+              pages and evidence history.
+            </p>
+            <a className="button button-primary" href="/signin-with-chatgpt?return_to=%2F%23workspace">
+              Sign in with ChatGPT
+            </a>
+          </div>
+        ) : (
+          <>
         <aside className="watch-form-panel">
           <div className="panel-label"><span>New watcher</span><span className="live-pill">Live fetch</span></div>
           <form onSubmit={addWatcher}>
@@ -239,6 +276,8 @@ export function MonitorWorkspace() {
             })}
           </div>
         </div>
+          </>
+        )}
       </div>
     </section>
   );

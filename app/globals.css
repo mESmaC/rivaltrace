@@ -434,6 +434,28 @@ main {
   overflow: hidden;
 }
 
+.signin-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  justify-items: start;
+  gap: 0.9rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+}
+
+.signin-panel h3,
+.signin-panel p {
+  margin: 0;
+}
+
+.signin-panel p:not(.eyebrow) {
+  max-width: 42rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
 .watch-form-panel {
   padding: 26px;
   background: var(--ink);

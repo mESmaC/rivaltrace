@@ -16,14 +16,18 @@ test("canonicalizes safe HTTPS targets and removes fragments", () => {
   );
 });
 
-test("derives a stable opaque identity without retaining the email", async () => {
+test("derives a stable keyed identity without retaining the email", async () => {
+  const pepper = "test-only-pepper-with-at-least-32-characters";
   assert.equal(normalizeIdentityEmail("  Owner@Example.com  "), "owner@example.com");
-  const first = await userIdentityId("Owner@Example.com");
-  const second = await userIdentityId(" owner@example.com ");
+  const first = await userIdentityId("Owner@Example.com", pepper);
+  const second = await userIdentityId(" owner@example.com ", pepper);
   assert.equal(first, second);
   assert.equal(first.length, 64);
   assert.doesNotMatch(first, /owner|example/i);
   assert.throws(() => normalizeIdentityEmail(""), /authenticated email/i);
+  assert.throws(() => normalizeIdentityEmail("owner@@example.com"), /authenticated email/i);
+  await assert.rejects(userIdentityId("owner@example.com", "short"), /identity secret/i);
+  assert.notEqual(first, await userIdentityId("owner@example.com", `${pepper}-different`));
 });
 
 test("rejects unsafe or non-public target forms", () => {
